@@ -1,35 +1,27 @@
-const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys')
-const express = require('express')
-const app = express()
-const pino = require('pino')
+const { Client, LocalAuth } = require('whatsapp-web.js');
 
-app.get('/', (req, res) => res.send('Bot online ✅'))
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => console.log('Server running'))
+const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: { args: ['--no-sandbox'] }
+});
 
-async function startBot() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth')
-    const sock = makeWASocket({ 
-        auth: state,
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: true
-    })
-    
-    sock.ev.on('creds.update', saveCreds)
-    
-    sock.ev.on('connection.update', (update) => {
-        const { connection, qr } = update
-        if(qr) console.log('SCAN THIS QR:', qr)
-        if(connection === 'open') console.log('Bot connected ✅')
-    })
+client.on('ready', () => {
+    console.log('Bot is ready!');
+});
 
-    sock.ev.on('messages.upsert', async (m) => {
-        const msg = m.messages[0]
-        if(!msg.message || msg.key.fromMe) return
-        const text = msg.message.conversation || msg.message.extendedTextMessage?.text
-        if(text?.toLowerCase() === 'ping') {
-            await sock.sendMessage(msg.key.remoteJid, { text: 'pong 🏓' })
-        }
-    })
+client.on('message', msg => {
+    if (msg.body === '!ping') {
+        msg.reply('pong');
+    }
+});
+
+async function getCode() {
+    const pairingCode = await client.requestPairingCode('254738550932');
+    console.log('PAIRING CODE:', pairingCode);
 }
-startBot()
+
+client.on('qr', () => {
+    getCode();
+});
+
+client.initialize();

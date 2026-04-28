@@ -1,0 +1,12 @@
+{
+  "name": "mini-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "postinstall": "npx puppeteer browsers install chrome"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.27.0"
+  }
+}

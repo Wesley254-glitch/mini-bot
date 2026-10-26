@@ -27,10 +27,36 @@ client.on('ready', () => {
     console.log('Client is ready!');
 });
 
-client.on('message', msg => {
-    if (msg.body === '!ping') {
-        msg.reply('pong');
+client.on('message', async (msg) => {
+    if (msg.fromMe) return;
+    if (msg.isStatus) return;
+
+    // Auto-read new incoming messages
+    await msg.markSeen();
+
+    const text = (msg.body || '').trim();
+    if (!text) return;
+
+    const lower = text.toLowerCase();
+
+    if (lower === '!ping') {
+        return msg.reply('pong');
     }
+
+    if (['hi', 'hello', 'hey'].includes(lower)) {
+        return msg.reply('Hello! I am your WhatsApp bot. How can I help?');
+    }
+
+    if (lower.includes('how are you')) {
+        return msg.reply('I am doing well and ready to help!');
+    }
+
+    if (lower.includes('weather')) {
+        return msg.reply('I cannot check live weather right now, but I can help with other things!');
+    }
+
+    // Default automatic reply for incoming messages
+    return msg.reply('I received your message and am here!');
 });
 
 client.initialize();

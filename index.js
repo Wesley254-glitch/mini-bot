@@ -1,11 +1,9 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const puppeteer = require('puppeteer');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        executablePath: puppeteer.executablePath(),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -20,7 +18,6 @@ const client = new Client({
 });
 
 const botName = 'Mini Bot';
-const friends = ['254738550932'];
 
 function randomReply(options) {
     return options[Math.floor(Math.random() * options.length)];
@@ -53,10 +50,6 @@ client.on('ready', () => {
 client.on('message', async (msg) => {
     if (msg.fromMe || msg.isStatus) return;
 
-    const sender = msg.from
-        .replace('@c.us', '')
-        .replace('@s.whatsapp.net', '');
-
     const text = (msg.body || '').trim();
     if (!text) return;
 
@@ -64,11 +57,6 @@ client.on('message', async (msg) => {
         await msg.markSeen();
     } catch (err) {
         console.error('Could not mark message as seen:', err.message);
-    }
-
-    const shouldReplyToAll = true;
-    if (!shouldReplyToAll && !friends.includes(sender)) {
-        return;
     }
 
     const lower = text.toLowerCase();
@@ -117,7 +105,7 @@ client.on('message', async (msg) => {
     if (lower.includes('love') || lower.includes('miss')) {
         return msg.reply(randomReply([
             'Aww, that is sweet 💙',
-            'I appreciate that! ����',
+            'I appreciate that! 😊',
             'That made my day!'
         ]));
     }

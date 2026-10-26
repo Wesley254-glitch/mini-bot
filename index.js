@@ -1,18 +1,20 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const puppeteer = require('puppeteer');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
+        executablePath: puppeteer.executablePath(),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
             '--no-first-run',
             '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
+            '--single-process'
         ]
     }
 });
@@ -31,21 +33,14 @@ async function emulateTyping(chat, ms = 1200) {
     }
 }
 
-client.on('qr', async (qr) => {
-    console.log('QR received, requesting pairing code...');
-    try {
-        const pairingCode = await client.requestPairingCode('254738550932');
-        console.log('PAIRING CODE:', pairingCode);
-    } catch (err) {
-        console.error('Could not request pairing code:', err.message);
-    }
+client.on('qr', async () => {
+    console.log('QR received. Please scan it with WhatsApp to pair the bot.');
 });
 
 client.on('ready', () => {
     console.log(`${botName} is ready!`);
     client.sendPresenceAvailable();
 
-    // Keep WhatsApp showing online / active
     setInterval(() => {
         try {
             client.sendPresenceAvailable();
@@ -58,7 +53,10 @@ client.on('ready', () => {
 client.on('message', async (msg) => {
     if (msg.fromMe || msg.isStatus) return;
 
-    const sender = msg.from;
+    const sender = msg.from
+        .replace('@c.us', '')
+        .replace('@s.whatsapp.net', '');
+
     const text = (msg.body || '').trim();
     if (!text) return;
 
@@ -68,14 +66,12 @@ client.on('message', async (msg) => {
         console.error('Could not mark message as seen:', err.message);
     }
 
-    const lower = text.toLowerCase();
-
-    // Only respond to saved friends or everyone if desired
     const shouldReplyToAll = true;
-    if (!shouldReplyToAll && !friends.includes(sender.replace('@c.us', '').replace('@s.whatsapp.net', ''))) {
+    if (!shouldReplyToAll && !friends.includes(sender)) {
         return;
     }
 
+    const lower = text.toLowerCase();
     await emulateTyping(msg.chat, 900);
 
     if (lower === '!ping') {
@@ -83,9 +79,7 @@ client.on('message', async (msg) => {
     }
 
     if (lower === '!help' || lower === 'help') {
-        return msg.reply(
-            'Commands:\n!ping\n!help\n!joke\n!time\n!date\n!status\nHi / Hello / Hey'
-        );
+        return msg.reply('Commands:\n!ping\n!help\n!joke\n!time\n!date\n!status\nHi / Hello / Hey');
     }
 
     if (lower === '!joke' || lower === 'joke') {
@@ -97,13 +91,11 @@ client.on('message', async (msg) => {
     }
 
     if (lower === '!time' || lower === 'time') {
-        const now = new Date();
-        return msg.reply(`The current time is: ${now.toLocaleTimeString()}`);
+        return msg.reply(`The current time is: ${new Date().toLocaleTimeString()}`);
     }
 
     if (lower === '!date' || lower === 'date') {
-        const now = new Date();
-        return msg.reply(`Today is: ${now.toLocaleDateString()}`);
+        return msg.reply(`Today is: ${new Date().toLocaleDateString()}`);
     }
 
     if (lower === '!status' || lower === 'status') {
@@ -125,7 +117,7 @@ client.on('message', async (msg) => {
     if (lower.includes('love') || lower.includes('miss')) {
         return msg.reply(randomReply([
             'Aww, that is sweet 💙',
-            'I appreciate that! 😊',
+            'I appreciate that! ����',
             'That made my day!'
         ]));
     }
